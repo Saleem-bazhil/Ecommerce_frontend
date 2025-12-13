@@ -2,7 +2,7 @@ import { useState } from "react";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import Navbar from "./components/components2/Navbar";
-import Hero from "./herosection/hero";
+import Hero from "./herosection/Hero";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Footer from "./components/components2/Footer";
 import Products from "./productpage/Products";
