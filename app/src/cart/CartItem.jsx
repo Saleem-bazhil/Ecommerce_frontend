@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import api from "../api";
 import { toast } from "react-toastify";
-import Button from "../components/ui/button";
+import { Button } from "../components/ui/button";
 
 const CartItem = ({ item, setCartData, setCartTotal }) => {
   const product = item?.product;
