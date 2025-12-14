@@ -48,6 +48,7 @@ const Hero = () => {
               px-3 sm:px-6 md:px-0
             "
           >
+            
             Discover premium products curated for those who appreciate the
             finest things in life.
           </p>
