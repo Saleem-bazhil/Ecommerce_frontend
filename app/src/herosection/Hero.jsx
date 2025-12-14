@@ -8,8 +8,7 @@ import ShopCategory from "./ShopCategory";
 const Hero = () => {
   return (
     <>
-    
-      <section className=" relative min-h-screen flex flex-col justify-center items-center overflow-hidden mt-8 ">
+      <section className=" relative min-h-screen flex flex-col justify-center items-center overflow-hidden mt-8 px-6 md:px-0">
         {/* Background Image */}
         <div className="absolute inset-0 -z-30">
           <img
@@ -23,7 +22,6 @@ const Hero = () => {
         <div className="gradient-hero absolute inset-0 -z-40" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/30"></div>
 
-
         {/* Soft Fade Overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/70 to-background -z-20" />
 
@@ -35,26 +33,51 @@ const Hero = () => {
             </span>
           </div>
 
-          <h1 className="font-playfair glow-text text-xl md:text-8xl font-bold mb-6 bg-gradient-to-r from-white via-accent to-white bg-clip-text text-transparent text-shadow-xl my-4">
+          <h1 className="font-playfair glow-text text-5xl md:text-8xl font-bold mb-6 bg-gradient-to-r from-white via-accent to-white bg-clip-text text-transparent text-shadow-xl my-4">
             Elevate Your
             <br />
             Lifestyle
           </h1>
 
-          <p className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-xl mx-auto">
-            Discover premium products curated for those  who appreciate the
+          <p
+            className="
+              text-base sm:text-lg md:text-2xl
+              text-muted-foreground
+              mb-8 sm:mb-10 md:mb-12
+              max-w-xl mx-auto
+              px-3 sm:px-6 md:px-0
+            "
+          >
+            Discover premium products curated for those who appreciate the
             finest things in life.
           </p>
 
-          <div className="flex items-center justify-center gap-5">
-            <Link to="/products">
-              <Button variant="luxury" size="lg" className="group">
+          <div
+            className="
+                    flex flex-col
+                    sm:flex-row
+                    items-center
+                    justify-center
+                    gap-4 sm:gap-5
+                    px-4 sm:px-0
+                  "
+          >
+            <Link to="/products" className="w-full sm:w-auto">
+              <Button
+                variant="luxury"
+                size="lg"
+                className="group w-full sm:w-auto"
+              >
                 Explore Collection
                 <ArrowRight className="h-5 w-5 ml-2 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
 
-            <Button variant="glass" size="lg" className="group">
+            <Button
+              variant="glass"
+              size="lg"
+              className="group w-full sm:w-auto"
+            >
               Limited Edition
             </Button>
           </div>
@@ -62,7 +85,7 @@ const Hero = () => {
       </section>
 
       {/* Test Section */}
-      <ShopCategory/>
+      <ShopCategory />
     </>
   );
 };
