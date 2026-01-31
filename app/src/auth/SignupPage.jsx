@@ -31,7 +31,7 @@ const SignupPage = () => {
             phone: "",
         },
         validationSchema,
-        onSubmit: async (values) => {
+        onSubmit: async (values, { setErrors }) => {
             setIsLoading(true);
             setErrorMessage("");
             try {
@@ -41,14 +41,60 @@ const SignupPage = () => {
                     password: values.password,
                     phone: values.phone
                 }
-                await api.post("/register/", payload);
+                const response = await api.post("/register/", payload);
+                console.log("Registration success:", response);
                 navigate("/login");
             } catch (error) {
-                setErrorMessage(
-                    error.response?.data?.message ||
-                    error.response?.data?.detail ||
-                    "Registration failed."
-                );
+                console.error("Registration error:", error);
+
+                if (error.response) {
+                    const data = error.response.data;
+                    console.log("Backend error response:", JSON.stringify(data, null, 2));
+
+                    if (data) {
+                        const fieldErrors = {};
+                        const allMessages = [];
+
+                        // If data is just a string (rare but possible), show it
+                        if (typeof data === 'string') {
+                            setErrorMessage(data);
+                            return;
+                        }
+
+                        // Check for detail/message
+                        if (data.detail) allMessages.push(data.detail);
+                        if (data.message) allMessages.push(data.message);
+
+                        // Iterate over keys to find field errors
+                        Object.keys(data).forEach(key => {
+                            if (['username', 'email', 'password', 'phone'].includes(key)) {
+                                // DRF usually returns errors as arrays
+                                const errorMsg = Array.isArray(data[key]) ? data[key][0] : data[key];
+                                fieldErrors[key] = errorMsg;
+                                allMessages.push(`${key}: ${errorMsg}`);
+                            } else if (key !== 'detail' && key !== 'message') {
+                                const errorMsg = Array.isArray(data[key]) ? data[key][0] : data[key];
+                                allMessages.push(`${key}: ${errorMsg}`);
+                            }
+                        });
+
+                        if (Object.keys(fieldErrors).length > 0) {
+                            setErrors(fieldErrors);
+                        }
+
+                        if (allMessages.length > 0) {
+                            setErrorMessage(`Registration failed: ${allMessages.join(" | ")}`);
+                        } else {
+                            setErrorMessage("Registration failed.");
+                        }
+                    } else {
+                        setErrorMessage("Registration failed. No error data returned.");
+                    }
+                } else if (error.request) {
+                    setErrorMessage("Network error. Please check your connection.");
+                } else {
+                    setErrorMessage("An unexpected error occurred.");
+                }
             } finally {
                 setIsLoading(false);
             }
