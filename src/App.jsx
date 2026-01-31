@@ -12,7 +12,6 @@ import CheckOutPage from "./checkoutpage/CheckOutPage";
 import LoginPage from "./auth/LoginPage";
 import SignupPage from "./auth/SignupPage";
 function App() {
-  // Routes configuration
   return (
     <>
       <BrowserRouter>

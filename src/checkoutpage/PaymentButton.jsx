@@ -1,10 +1,11 @@
-// src/components/RazorpayPayButton.jsx
 import { useState } from "react";
 import api from "../api";
 import { Button } from "@/components/ui/button";
 import { CreditCard } from "lucide-react";
 
-// Load Razorpay SDK dynamically (only once)
+/* ----------------------------------------
+   Load Razorpay SDK (only once)
+----------------------------------------- */
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
     if (window.Razorpay) return resolve(true);
@@ -12,103 +13,98 @@ const loadRazorpayScript = () => {
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
 
-    script.onload = () => {
-      console.log("Razorpay Loaded");
-      resolve(true);
-    };
-
-    script.onerror = () => {
-      console.error("Razorpay SDK failed to load");
-      resolve(false);
-    };
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
 
     document.body.appendChild(script);
   });
 };
 
-const PaymentButton = ({
-  amount,
+const RazorpayPayButton = ({
+  amount,        // decimal amount from UI (e.g. 5465.01)
   formData,
-  validateForm,   // async from Formik
+  validateForm,
   disabled,
   cartItems = [],
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handlePayment = async () => {
-    console.log("Pay clicked. Amount (₹):", amount);
+    console.log("Pay clicked. Amount:", amount);
     console.log("Form data:", formData);
 
-    // ✅ 1) WAIT for async validation
+    // 1️⃣ Validate checkout form
     const isValid = await validateForm();
     if (!isValid) {
-      console.log("Validation failed");
+      console.log("Form validation failed");
       return;
     }
 
     if (!amount || amount <= 0) {
-      console.log("Invalid amount:", amount);
+      alert("Invalid amount");
       return;
     }
 
     setIsProcessing(true);
 
-    // Load Razorpay script
-    const sdkLoaded = await loadRazorpayScript();
-    if (!sdkLoaded || !window.Razorpay) {
-      alert("Unable to load Razorpay. Please try again.");
+    // 2️⃣ Load Razorpay SDK
+    const loaded = await loadRazorpayScript();
+    if (!loaded || !window.Razorpay) {
+      alert("Razorpay SDK failed to load");
       setIsProcessing(false);
       return;
     }
 
     try {
-      const amountInPaise = Math.round(amount * 100);
+      // 🔥 IMPORTANT FIX
+      // Backend expects INTEGER rupees (NOT decimal)
+      const roundedAmount = Math.round(amount);
 
-      // 2️⃣ Create order
+      // 3️⃣ Create Razorpay Order (Backend)
       const orderRes = await api.post("/razorpay/order/create/", {
-        amount: amountInPaise,
+        amount: roundedAmount, // ✅ INTEGER ONLY
         currency: "INR",
       });
 
-      console.log("Order created:", orderRes.data);
-      const order_id = orderRes.data?.data?.id;
+      console.log("Order response:", orderRes.data);
 
+      const orderId = orderRes.data?.data?.id;
+      if (!orderId) {
+        throw new Error("Order ID not received from backend");
+      }
+
+      // 4️⃣ Razorpay Checkout Options
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        name: "Bazhil",
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Test / Live key
+        name: "Bazhil Groups",
         description: "Order Payment",
-        image:
-          "https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg",
-        order_id,
+        order_id: orderId,
 
         handler: async function (response) {
-          console.log("Razorpay success:", response);
+          console.log("Payment success:", response);
 
           try {
-            console.log("Sending verification request to backend...");
-
-            // ✅ 2) SEND FLAT FIELDS THAT MATCH Transaction MODEL
+            // 5️⃣ Verify & Save Transaction
             const verifyRes = await api.post("/razorpay/order/complete/", {
               payment_id: response.razorpay_payment_id,
               order_id: response.razorpay_order_id,
               signature: response.razorpay_signature,
-              amount: amountInPaise,
 
+              amount: roundedAmount, // ✅ INTEGER
               full_name: formData.name,
               email: formData.email,
               phone: formData.phone,
               address: formData.address,
               city: formData.city,
               pincode: formData.pincode,
-
               cart_items: cartItems,
             });
 
             console.log("Verification success:", verifyRes.data);
-            alert("Payment Successful!");
+            alert("Payment Successful ");
           } catch (err) {
             console.error("Verification failed:", err.response?.data || err);
-            alert("Verification failed. Check console.");
+            alert("Payment verification failed");
           }
         },
 
@@ -127,11 +123,12 @@ const PaymentButton = ({
         },
       };
 
+      // 6️⃣ Open Razorpay Checkout
       const rzp = new window.Razorpay(options);
 
       rzp.on("payment.failed", function (res) {
-        console.error("Razorpay Payment Failed:", res.error);
-        alert("Payment Failed: " + res.error.description);
+        console.error("Payment failed:", res.error);
+        alert(res.error.description);
       });
 
       rzp.open();
@@ -140,9 +137,10 @@ const PaymentButton = ({
         "Order creation failed:",
         error.response?.data || error.message
       );
+      alert("Unable to initiate payment");
     } finally {
       setIsProcessing(false);
-      console.log("Payment flow completed.");
+      console.log("Payment flow completed");
     }
   };
 
@@ -150,7 +148,7 @@ const PaymentButton = ({
     <Button
       variant="luxury"
       size="lg"
-      className="w-full mt-6 group"
+      className="w-full mt-6"
       onClick={handlePayment}
       disabled={isProcessing || disabled}
     >
@@ -160,4 +158,4 @@ const PaymentButton = ({
   );
 };
 
-export default PaymentButton;
+export default RazorpayPayButton;

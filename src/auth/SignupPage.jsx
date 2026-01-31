@@ -31,7 +31,7 @@ const SignupPage = () => {
             phone: "",
         },
         validationSchema,
-        onSubmit: async (values) => {
+        onSubmit: async (values, { setErrors }) => {
             setIsLoading(true);
             setErrorMessage("");
             try {
@@ -41,44 +41,91 @@ const SignupPage = () => {
                     password: values.password,
                     phone: values.phone
                 }
-                await api.post("/register/", payload);
-                // After signup, redirect to login
+                const response = await api.post("/register/", payload);
+                console.log("Registration success:", response);
                 navigate("/login");
             } catch (error) {
-                console.error("Signup Error:", error);
-                setErrorMessage(
-                    error.response?.data?.message || "Registration failed. Try again."
-                );
+                console.error("Registration error:", error);
+
+                if (error.response) {
+                    const data = error.response.data;
+                    console.log("Backend error response:", JSON.stringify(data, null, 2));
+
+                    if (data) {
+                        const fieldErrors = {};
+                        const allMessages = [];
+
+                        // If data is just a string (rare but possible), show it
+                        if (typeof data === 'string') {
+                            setErrorMessage(data);
+                            return;
+                        }
+
+                        // Check for detail/message
+                        if (data.detail) allMessages.push(data.detail);
+                        if (data.message) allMessages.push(data.message);
+
+                        // Iterate over keys to find field errors
+                        Object.keys(data).forEach(key => {
+                            if (['username', 'email', 'password', 'phone'].includes(key)) {
+                                // DRF usually returns errors as arrays
+                                const errorMsg = Array.isArray(data[key]) ? data[key][0] : data[key];
+                                fieldErrors[key] = errorMsg;
+                                allMessages.push(`${key}: ${errorMsg}`);
+                            } else if (key !== 'detail' && key !== 'message') {
+                                const errorMsg = Array.isArray(data[key]) ? data[key][0] : data[key];
+                                allMessages.push(`${key}: ${errorMsg}`);
+                            }
+                        });
+
+                        if (Object.keys(fieldErrors).length > 0) {
+                            setErrors(fieldErrors);
+                        }
+
+                        if (allMessages.length > 0) {
+                            setErrorMessage(`Registration failed: ${allMessages.join(" | ")}`);
+                        } else {
+                            setErrorMessage("Registration failed.");
+                        }
+                    } else {
+                        setErrorMessage("Registration failed. No error data returned.");
+                    }
+                } else if (error.request) {
+                    setErrorMessage("Network error. Please check your connection.");
+                } else {
+                    setErrorMessage("An unexpected error occurred.");
+                }
             } finally {
                 setIsLoading(false);
             }
         },
     });
 
-    const { values, errors, touched, handleChange, handleBlur, handleSubmit } =
+    const { values, errors, touched, handleChange, handleBlur, handleSubmit, setErrors } =
         formik;
 
     return (
-        <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-            {/* Background decorations */}
-            <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
-            <div className="absolute bottom-[-10%] left-[-10%] w-[30%] h-[30%] bg-accent/20 blur-[100px] rounded-full pointer-events-none" />
+        <div className="min-h-screen flex items-center justify-center pt-24 md:pt-32 pb-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-[hsl(var(--color-background))]">
+            {/* Animated Background */}
+            <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary/20 blur-[120px] rounded-full float pointer-events-none" />
+            <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/20 blur-[100px] rounded-full float pointer-events-none" style={{ animationDelay: '2s' }} />
+            <div className="absolute top-[40%] left-[20%] w-[30%] h-[30%] bg-purple-900/20 blur-[120px] rounded-full float pointer-events-none" style={{ animationDelay: '1s' }} />
 
-            <div className="max-w-md w-full space-y-8 relative z-10 p-8 glass-gradient rounded-3xl animate-in fade-in zoom-in duration-500">
+            <div className="max-w-md w-full space-y-8 relative z-10 p-6 sm:p-10 glass-gradient rounded-3xl animate-in fade-in zoom-in duration-500 border border-white/10 shadow-luxury">
                 <div className="text-center">
-                    <h2 className="mt-2 text-4xl font-bold font-playfair tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                    <h2 className="mt-2 text-3xl sm:text-4xl font-bold font-playfair tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent drop-shadow-sm">
                         Create Account
                     </h2>
-                    <p className="mt-2 text-sm text-muted-foreground">
+                    <p className="mt-2 text-sm text-muted-foreground font-medium">
                         Join the exclusive world of Elitora
                     </p>
                 </div>
 
-                <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
+                <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
                     {/* Username */}
                     <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <User className="h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors" />
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <User className="h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors duration-300" />
                         </div>
                         <Input
                             id="username"
@@ -87,17 +134,17 @@ const SignupPage = () => {
                             value={values.username}
                             onChange={handleChange}
                             onBlur={handleBlur}
-                            className="pl-10 bg-white/5 border-white/10 hover:border-accent/50 focus:border-accent backdrop-blur-sm transition-all"
+                            className="pl-12 h-14 bg-white/5 border-white/10 hover:border-accent/40 focus:border-accent backdrop-blur-md transition-all duration-300 rounded-xl text-base shadow-inner"
                         />
                     </div>
                     {touched.username && errors.username && (
-                        <p className="text-xs text-destructive ml-1">{errors.username}</p>
+                        <p className="text-xs text-destructive ml-1 animate-pulse font-medium">{errors.username}</p>
                     )}
 
                     {/* Email */}
                     <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Mail className="h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors" />
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <Mail className="h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors duration-300" />
                         </div>
                         <Input
                             id="email"
@@ -107,17 +154,17 @@ const SignupPage = () => {
                             value={values.email}
                             onChange={handleChange}
                             onBlur={handleBlur}
-                            className="pl-10 bg-white/5 border-white/10 hover:border-accent/50 focus:border-accent backdrop-blur-sm transition-all"
+                            className="pl-12 h-14 bg-white/5 border-white/10 hover:border-accent/40 focus:border-accent backdrop-blur-md transition-all duration-300 rounded-xl text-base shadow-inner"
                         />
                     </div>
                     {touched.email && errors.email && (
-                        <p className="text-xs text-destructive ml-1">{errors.email}</p>
+                        <p className="text-xs text-destructive ml-1 animate-pulse font-medium">{errors.email}</p>
                     )}
 
                     {/* Phone */}
                     <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Phone className="h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors" />
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <Phone className="h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors duration-300" />
                         </div>
                         <Input
                             id="phone"
@@ -127,17 +174,17 @@ const SignupPage = () => {
                             value={values.phone}
                             onChange={handleChange}
                             onBlur={handleBlur}
-                            className="pl-10 bg-white/5 border-white/10 hover:border-accent/50 focus:border-accent backdrop-blur-sm transition-all"
+                            className="pl-12 h-14 bg-white/5 border-white/10 hover:border-accent/40 focus:border-accent backdrop-blur-md transition-all duration-300 rounded-xl text-base shadow-inner"
                         />
                     </div>
                     {touched.phone && errors.phone && (
-                        <p className="text-xs text-destructive ml-1">{errors.phone}</p>
+                        <p className="text-xs text-destructive ml-1 animate-pulse font-medium">{errors.phone}</p>
                     )}
 
                     {/* Password */}
                     <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Lock className="h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors" />
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <Lock className="h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors duration-300" />
                         </div>
                         <Input
                             id="password"
@@ -147,17 +194,17 @@ const SignupPage = () => {
                             value={values.password}
                             onChange={handleChange}
                             onBlur={handleBlur}
-                            className="pl-10 bg-white/5 border-white/10 hover:border-accent/50 focus:border-accent backdrop-blur-sm transition-all"
+                            className="pl-12 h-14 bg-white/5 border-white/10 hover:border-accent/40 focus:border-accent backdrop-blur-md transition-all duration-300 rounded-xl text-base shadow-inner"
                         />
                     </div>
                     {touched.password && errors.password && (
-                        <p className="text-xs text-destructive ml-1">{errors.password}</p>
+                        <p className="text-xs text-destructive ml-1 animate-pulse font-medium">{errors.password}</p>
                     )}
 
                     {/* Confirm Password */}
                     <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Lock className="h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors" />
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <Lock className="h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors duration-300" />
                         </div>
                         <Input
                             id="confirmPassword"
@@ -167,15 +214,15 @@ const SignupPage = () => {
                             value={values.confirmPassword}
                             onChange={handleChange}
                             onBlur={handleBlur}
-                            className="pl-10 bg-white/5 border-white/10 hover:border-accent/50 focus:border-accent backdrop-blur-sm transition-all"
+                            className="pl-12 h-14 bg-white/5 border-white/10 hover:border-accent/40 focus:border-accent backdrop-blur-md transition-all duration-300 rounded-xl text-base shadow-inner"
                         />
                     </div>
                     {touched.confirmPassword && errors.confirmPassword && (
-                        <p className="text-xs text-destructive ml-1">{errors.confirmPassword}</p>
+                        <p className="text-xs text-destructive ml-1 animate-pulse font-medium">{errors.confirmPassword}</p>
                     )}
 
                     {errorMessage && (
-                        <div className="text-center text-sm text-destructive bg-destructive/10 py-2 rounded-lg">
+                        <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center font-medium animate-in fade-in slide-in-from-top-1 animate-shake">
                             {errorMessage}
                         </div>
                     )}
@@ -184,10 +231,10 @@ const SignupPage = () => {
                         <Button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full h-12 text-lg font-medium bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity rounded-xl shadow-lg shadow-primary/20 mt-2"
+                            className="w-full h-14 text-lg font-semibold tracking-wide bg-gradient-to-r from-primary to-accent hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 rounded-xl shadow-luxury hover:shadow-glow mt-4"
                         >
                             {isLoading ? (
-                                <Loader2 className="h-5 w-5 animate-spin" />
+                                <Loader2 className="h-6 w-6 animate-spin" />
                             ) : (
                                 "Create Account"
                             )}
@@ -198,10 +245,10 @@ const SignupPage = () => {
                         Already have an account?{" "}
                         <Link
                             to="/login"
-                            className="font-medium text-accent hover:text-accent/80 transition-colors inline-flex items-center gap-1 group"
+                            className="font-medium text-accent hover:text-white transition-colors inline-flex items-center gap-1 group"
                         >
                             Sign in
-                            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
                         </Link>
                     </div>
                 </form>

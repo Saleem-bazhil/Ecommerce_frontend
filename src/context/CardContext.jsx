@@ -9,7 +9,7 @@ export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // ✅ 1. Initialize cartCode from localStorage (or create one)
+  //  1. Initialize cartCode from localStorage (or create one)
   useEffect(() => {
     let existing = localStorage.getItem("cart_code");
 
