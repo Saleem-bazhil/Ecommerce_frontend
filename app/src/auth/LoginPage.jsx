@@ -6,6 +6,7 @@ import { Mail, Lock, Loader2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import api from "../api";
+import { useAuth } from "../context/AuthContext";
 
 const validationSchema = Yup.object({
     username: Yup.string().trim().required("Username is required"),
@@ -14,6 +15,7 @@ const validationSchema = Yup.object({
 
 const LoginPage = () => {
     const navigate = useNavigate();
+    const { login } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
 
@@ -28,8 +30,7 @@ const LoginPage = () => {
             setErrorMessage("");
             try {
                 const response = await api.post("/token/", values);
-                localStorage.setItem("access_token", response.data.access);
-                localStorage.setItem("refresh_token", response.data.refresh);
+                login(response.data.access, response.data.refresh);
                 navigate("/");
 
             } catch (error) {

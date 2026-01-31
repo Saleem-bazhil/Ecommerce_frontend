@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingCart, Search, Heart, Menu, User, X } from "lucide-react";
+import { ShoppingCart, Search, Heart, Menu, User, X, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "../../context/CardContext";
+import { useAuth } from "../../context/AuthContext";
 
-// ❌ remove prop numCartItems
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // ✅ get count from context
   const { cartCount } = useCart();
+  const { isAuthenticated, logout } = useAuth();
 
   return (
     <>
@@ -62,11 +62,17 @@ export default function Header() {
               <Button variant="ghost" size="icon" className="hidden md:flex">
                 <Heart className="h-5 w-5" />
               </Button>
-              <Link to="/login">
-                <Button variant="ghost" size="icon" className="hidden md:flex">
-                  <User className="h-5 w-5" />
+              {isAuthenticated ? (
+                <Button variant="ghost" size="icon" className="hidden md:flex" onClick={logout} title="Logout">
+                  <LogOut className="h-5 w-5" />
                 </Button>
-              </Link>
+              ) : (
+                <Link to="/login">
+                  <Button variant="ghost" size="icon" className="hidden md:flex">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </Link>
+              )}
 
               {/* Cart */}
               <Link to="/cart">
