@@ -9,7 +9,10 @@ import Products from "./productpage/Products";
 import ProductDetail from "./productpage/ProductDetail";
 import CartPage from "./cart/CartPage";
 import CheckOutPage from "./checkoutpage/CheckOutPage";
+import LoginPage from "./auth/LoginPage";
+import SignupPage from "./auth/SignupPage";
 function App() {
+  // Routes configuration
   return (
     <>
       <BrowserRouter>
@@ -18,8 +21,10 @@ function App() {
           <Route path="/" element={<Hero />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products/:id" element={<ProductDetail />} />
-          <Route path="/cart" element={<CartPage/>}/>
-          <Route path="/checkout" element={<CheckOutPage/>}/>
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckOutPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
         </Routes>
         <Footer />
       </BrowserRouter>
